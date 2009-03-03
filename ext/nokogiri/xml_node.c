@@ -1,14 +1,11 @@
 #include <xml_node.h>
 
-#ifdef DEBUG
-static void debug_node_dealloc(xmlNodePtr x)
+static void dealloc(xmlNodePtr x)
 {
   NOKOGIRI_DEBUG_START(x)
+  xmlFreeNode(x);
   NOKOGIRI_DEBUG_END(x)
 }
-#else
-#  define debug_node_dealloc 0
-#endif
 
 /*
  * call-seq:
@@ -101,6 +98,7 @@ static VALUE unlink_node(VALUE self)
   xmlNodePtr node;
   Data_Get_Struct(self, xmlNode, node);
   xmlUnlinkNode(node);
+  RDATA(self)->dfree = (void (*)(void *))dealloc;
   return self;
 }
 
@@ -372,6 +370,8 @@ static VALUE add_child(VALUE self, VALUE child)
   Data_Get_Struct(child, xmlNode, node);
   Data_Get_Struct(self, xmlNode, parent);
 
+  RDATA(child)->dfree = NULL;
+
   if (node->doc == parent->doc) {
     xmlUnlinkNode(node) ;
 
@@ -476,6 +476,8 @@ static VALUE add_next_sibling(VALUE self, VALUE rb_node)
   Data_Get_Struct(self, xmlNode, node);
   Data_Get_Struct(rb_node, xmlNode, _new_sibling);
 
+  //RDATA(rb_node)->dfree = RDATA(self)->dfree;
+
   if(!(new_sibling = xmlAddNextSibling(node, _new_sibling)))
     rb_raise(rb_eRuntimeError, "Could not add next sibling");
 
@@ -501,6 +503,8 @@ static VALUE add_previous_sibling(VALUE self, VALUE rb_node)
 
   Data_Get_Struct(self, xmlNode, node);
   Data_Get_Struct(rb_node, xmlNode, sibling);
+
+  //RDATA(rb_node)->dfree = RDATA(self)->dfree;
 
   if(!(new_sibling = xmlAddPrevSibling(node, sibling)))
     rb_raise(rb_eRuntimeError, "Could not add previous sibling");
@@ -646,46 +650,46 @@ VALUE Nokogiri_wrap_xml_node(xmlNodePtr node)
 
     case XML_TEXT_NODE:
       klass = rb_const_get(mNokogiriXml, rb_intern("Text"));
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_ENTITY_REF_NODE:
       klass = cNokogiriXmlEntityReference;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_COMMENT_NODE:
       klass = cNokogiriXmlComment;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_DOCUMENT_FRAG_NODE:
       klass = cNokogiriXmlDocumentFragment;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_PI_NODE:
       klass = cNokogiriXmlProcessingInstruction;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_ELEMENT_NODE:
       klass = rb_const_get(mNokogiriXml, rb_intern("Element"));
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_ATTRIBUTE_NODE:
       klass = cNokogiriXmlAttr;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_ENTITY_DECL:
       klass = rb_const_get(mNokogiriXml, rb_intern("EntityDeclaration"));
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_CDATA_SECTION_NODE:
       klass = cNokogiriXmlCData;
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     case XML_DTD_NODE:
       klass = rb_const_get(mNokogiriXml, rb_intern("DTD"));
-      rb_node = Data_Wrap_Struct(klass, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(klass, 0, NULL, node) ;
       break;
     default:
-      rb_node = Data_Wrap_Struct(cNokogiriXmlNode, 0, debug_node_dealloc, node) ;
+      rb_node = Data_Wrap_Struct(cNokogiriXmlNode, 0, NULL, node) ;
   }
 
   rb_hash_aset(node_cache, index, rb_node);
