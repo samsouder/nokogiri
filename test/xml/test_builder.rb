@@ -6,7 +6,7 @@ module Nokogiri
       $the_global_var = 'one'
       @@the_class_var = 'two'
       @the_instance_var = 'three'
-      
+
       def test_cdata
         the_local_var = 'hello world'
         builder = Nokogiri::XML::Builder.new do
@@ -16,10 +16,11 @@ module Nokogiri
               item $the_global_var
               item @@the_class_var
               item @the_instance_var
+              item string_generation_method
             }
           }
         end
-        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item></items></root>', builder.to_xml.gsub(/\n/, ''))
+        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item><item>four</item></items></root>', builder.to_xml.gsub(/\n/, ''))
       end
 
       def test_builder_no_block
@@ -31,9 +32,16 @@ module Nokogiri
             item $the_global_var
             item @@the_class_var
             item @the_instance_var
+            item string_generation_method
           }
         }
-        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item></items></root>', builder.to_xml.gsub(/\n/, ''))
+        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item><item>four</item></items></root>', builder.to_xml.gsub(/\n/, ''))
+      end
+
+      private
+
+      def string_generation_method
+        "four"
       end
     end
   end
