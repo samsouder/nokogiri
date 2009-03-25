@@ -3,45 +3,40 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', "helper"))
 module Nokogiri
   module XML
     class TestBuilder < Nokogiri::TestCase
-      $the_global_var = 'one'
-      @@the_class_var = 'two'
-      @the_instance_var = 'three'
+      def test_nested_local_variable
+        @ivar     = 'hello'
+        local_var = 'hello world'
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.root do
+            xml.foo local_var
+            xml.bar @ivar
+            xml.baz {
+              xml.text @ivar
+            }
+          end
+        end
+
+        assert_equal 'hello world', builder.doc.at('//root/foo').content
+        assert_equal 'hello', builder.doc.at('//root/bar').content
+        assert_equal 'hello', builder.doc.at('baz').content
+      end
 
       def test_cdata
-        the_local_var = 'hello world'
         builder = Nokogiri::XML::Builder.new do
           root {
-            cdata the_local_var
-            items {
-              item $the_global_var
-              item @@the_class_var
-              item @the_instance_var
-              item string_generation_method
-            }
+            cdata "hello world"
           }
         end
-        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item><item>four</item></items></root>', builder.to_xml.gsub(/\n/, ''))
+        assert_equal("<?xml version=\"1.0\"?><root><![CDATA[hello world]]></root>", builder.to_xml.gsub(/\n/, ''))
       end
 
       def test_builder_no_block
-        the_local_var = 'hello world'
+        string = "hello world"
         builder = Nokogiri::XML::Builder.new
         builder.root {
-          cdata the_local_var
-          items {
-            item $the_global_var
-            item @@the_class_var
-            item @the_instance_var
-            item string_generation_method
-          }
+          cdata string
         }
-        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item><item>four</item></items></root>', builder.to_xml.gsub(/\n/, ''))
-      end
-
-      private
-
-      def string_generation_method
-        "four"
+        assert_equal("<?xml version=\"1.0\"?><root><![CDATA[hello world]]></root>", builder.to_xml.gsub(/\n/, ''))
       end
     end
   end
