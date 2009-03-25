@@ -3,22 +3,37 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', "helper"))
 module Nokogiri
   module XML
     class TestBuilder < Nokogiri::TestCase
+      $the_global_var = 'one'
+      @@the_class_var = 'two'
+      @the_instance_var = 'three'
+      
       def test_cdata
+        the_local_var = 'hello world'
         builder = Nokogiri::XML::Builder.new do
           root {
-            cdata "hello world"
+            cdata the_local_var
+            items {
+              item $the_global_var
+              item @@the_class_var
+              item @the_instance_var
+            }
           }
         end
-        assert_equal("<?xml version=\"1.0\"?><root><![CDATA[hello world]]></root>", builder.to_xml.gsub(/\n/, ''))
+        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item></items></root>', builder.to_xml.gsub(/\n/, ''))
       end
 
       def test_builder_no_block
-        string = "hello world"
+        the_local_var = 'hello world'
         builder = Nokogiri::XML::Builder.new
         builder.root {
-          cdata string
+          cdata the_local_var
+          items {
+            item $the_global_var
+            item @@the_class_var
+            item @the_instance_var
+          }
         }
-        assert_equal("<?xml version=\"1.0\"?><root><![CDATA[hello world]]></root>", builder.to_xml.gsub(/\n/, ''))
+        assert_equal('<?xml version="1.0"?><root><![CDATA[hello world]]><items><item>one</item><item>two</item><item>three</item></items></root>', builder.to_xml.gsub(/\n/, ''))
       end
     end
   end
