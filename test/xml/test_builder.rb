@@ -42,24 +42,17 @@ module Nokogiri
         assert_equal('<?xml version="1.0"?><root><![CDATA[local]]></root>', builder.to_xml.gsub(/\n/, ''))
       end
 
-      def test_string_method_no_block
-        builder = Nokogiri::XML::Builder.new
-        builder.root {
-            foo string_generation_method
-        }
-
-        assert_equal 'string_generation', builder.doc.at('//root/foo').content
-      end
-
       def test_string_method
-        builder = Nokogiri::XML::Builder.new do
-          root {
-            foo string_generation_method
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.root {
+            xml.foo string_generation_method
           }
         end
 
-        assert_equal 'string_generation', builder.doc.at('//root/foo').content
+        assert_equal 'string generation', builder.doc.at('//root/foo').content
       end
+
+      private
 
       def string_generation_method
         "string generation"
